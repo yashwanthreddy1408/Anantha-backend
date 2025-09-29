@@ -1,4 +1,5 @@
 import os 
+import time
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,8 +28,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],   # <- must be a list
-    allow_headers=["*"]    # <- must be a list
+    allow_methods=["*"],
+    allow_headers=["*"]
 )
 history = [{"question": "hi", "answer": "Hello, I am float chat, here to assist you with oceanographic data, feel free to ask any question related to it."}]
 
@@ -73,6 +74,24 @@ def clean_response(res):
 
 async def save_pg_data_async(pg_data, path):
     await asyncio.to_thread(pg_data.to_csv, path, index=False)
+
+
+def safe_api_call(func, *args, retries=3, delay=2, **kwargs):
+    """
+    Wrapper to safely call external APIs with retry logic.
+    Raises HTTPException with 503 if API fails after retries.
+    """
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"Attempt {attempt+1} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+    raise HTTPException(
+        status_code=503,
+        detail="External API temporarily unavailable. Please try again later."
+    )
 
 
 def text_answer(query, language):
@@ -356,33 +375,20 @@ def plot_answer(query, language="english"):
                         return {"text": "Could not generate SQL query.", "csv_url": None}
     
     return {"text": "I couldn't process your query.", "csv_url": None}
-    
+
+
 @app.get("/")
 def main():
     return {"message": "Welcome to Float chat, what do you want to know today... ?"}
+
 
 static_path = Path(__file__).parent / "static"
 print(f"Static path: {static_path}")
 
 app.mount("/static", StaticFiles(directory=static_path), name="static")
 
+
 @app.post("/query")
-def safe_api_call(func, *args, retries=3, delay=2, **kwargs):
-    """
-    Wrapper to safely call external APIs with retry logic.
-    Raises HTTPException with 503 if API fails after retries.
-    """
-    for attempt in range(retries):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            print(f"Attempt {attempt+1} failed: {e}")
-            time.sleep(delay)
-    raise HTTPException(
-        status_code=503,
-        detail="External API temporarily unavailable. Please try again later."
-    )
-    
 def get_answer(req: QueryRequest):
     global history
 
