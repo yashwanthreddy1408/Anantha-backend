@@ -1,0 +1,15 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+pandas
+sqlalchemy
+psycopg2-binary
+openai
+pytz
+geopandas
+shapely
+fiona
+pyproj
+rtree
+chromadb
