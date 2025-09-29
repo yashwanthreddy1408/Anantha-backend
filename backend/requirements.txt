@@ -13,3 +13,4 @@ fiona
 pyproj
 rtree
 chromadb
+google-genai
