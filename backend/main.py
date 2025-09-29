@@ -27,10 +27,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods={"*"},
-    allow_headers={"*"}
+    allow_methods=["*"],   # <- must be a list
+    allow_headers=["*"]    # <- must be a list
 )
-
 history = [{"question": "hi", "answer": "Hello, I am float chat, here to assist you with oceanographic data, feel free to ask any question related to it."}]
 
 
